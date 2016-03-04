@@ -10,13 +10,16 @@ let server = http.createServer(function (req, res) {
   if (url == '/') {
     url += 'index.html';
   }
-  // Your application HAS to respond to GET /health with status 200
-  // for OpenShift health monitoring
+
+  // IMPORTANT: Your application HAS to respond to GET /health with status 200
+  //            for OpenShift health monitoring
+
   if (url == '/health') {
     res.writeHead(200);
     res.end();
   } else if (url.indexOf('/info/') == 0) {
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache, no-store');
     res.end(JSON.stringify(sysInfo[url.slice(6)]()));
   } else {
     fs.readFile('./static' + url, function (err, data) {
@@ -24,7 +27,11 @@ let server = http.createServer(function (req, res) {
         res.writeHead(404);
         res.end();
       } else {
-        res.setHeader('Content-Type', contentTypes[path.extname(url).slice(1)])
+        let ext = path.extname(url).slice(1);
+        res.setHeader('Content-Type', contentTypes[ext]);
+        if (ext === 'html') {
+          res.setHeader('Cache-Control', 'no-cache, no-store');
+        }
         res.end(data);
       }
     });
